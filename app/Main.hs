@@ -10,8 +10,8 @@ import           Data.Word (Word8)
 import           Control.Monad
 import           Control.Monad.Loops (whileM_)
 
-import Lib
 import Data.Void
+import System.IO (stdout, hSetBuffering, BufferMode (LineBuffering), hFlush)
 
 data Instruction = ILeft
                  | IRight
@@ -132,6 +132,8 @@ main = do
   s <- initState
   let loop :: IO Void
       loop = do
+        putStr "BF> "
+        hFlush stdout
         l <- getLine
         case parse l of
           Just program -> do
