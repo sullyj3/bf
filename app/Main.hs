@@ -1,37 +1,45 @@
-{-# language LambdaCase, BlockArguments, RecordWildCards, NamedFieldPuns #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
-import           Data.IORef
+import Control.Monad.Loops (whileM_)
+import Data.IORef
+  ( IORef,
+    modifyIORef,
+    newIORef,
+    readIORef,
+    writeIORef,
+  )
+import qualified Data.Vector as Vec
+import Data.Vector.Mutable (IOVector)
 import qualified Data.Vector.Mutable as MutVec
-import qualified Data.Vector         as Vec
-import           Data.Vector.Mutable (IOVector)
-import           Data.Word (Word8)
-import           Control.Monad
-import           Control.Monad.Loops (whileM_)
+import Data.Void (Void, vacuous)
+import Data.Word (Word8)
+import System.IO (BufferMode (LineBuffering), hFlush, hSetBuffering, stdout)
 
-import Data.Void
-import System.IO (stdout, hSetBuffering, BufferMode (LineBuffering), hFlush)
+data Instruction
+  = ILeft
+  | IRight
+  | IInc
+  | IDec
+  | IOutput
+  | IInput
+  | IJumpRightIfZero
+  | IJumpLeftIfNonZero
+  deriving (Show)
 
-data Instruction = ILeft
-                 | IRight
-                 | IInc
-                 | IDec
-                 | IOutput
-                 | IInput
-                 | IJumpRightIfZero
-                 | IJumpLeftIfNonZero
-  deriving Show
-
--- should these be IO refs? probs
-data Tape = Tape { tapeNeg :: IORef (IOVector Word8), tapePos :: IORef (IOVector Word8) }
+data Tape = Tape
+  { tapeNeg :: IORef (IOVector Word8), -- The segment of the tape with negative indices
+    tapePos :: IORef (IOVector Word8)  -- The segment of the tape with nonnegative indices
+  }
 
 initTape :: IO Tape
 initTape = do
-  vecTapeNeg <- MutVec.replicate 1024 0
-  vecTapePos <- MutVec.replicate 1024 0
-  tapeNeg <- newIORef vecTapeNeg
-  tapePos <- newIORef vecTapePos
+  tapeNeg <- newIORef =<< MutVec.replicate 1024 0
+  tapePos <- newIORef =<< MutVec.replicate 1024 0
   pure $ Tape {..}
 
 parse :: String -> Maybe [Instruction]
@@ -49,7 +57,7 @@ parseInstruction = \case
   ']' -> Just IJumpLeftIfNonZero
   _ -> Nothing
 
-data ProgState = ProgState { tape :: Tape, ptr :: IORef Int }
+data ProgState = ProgState {tape :: Tape, ptr :: IORef Int}
 
 initState :: IO ProgState
 initState = do
@@ -61,17 +69,17 @@ step :: ProgState -> Instruction -> IO ()
 step progstate@ProgState {..} instruction = do
   ptr' <- readIORef ptr
   case instruction of
-    ILeft ->              modifyIORef ptr (subtract 1)
-    IRight ->             modifyIORef ptr (+1)
-    IInc ->               inc tape ptr'
-    IDec ->               dec tape ptr'
-    IOutput ->            output tape ptr'
-    IInput ->             undefined
-    IJumpRightIfZero ->   undefined
+    ILeft -> modifyIORef ptr (subtract 1)
+    IRight -> modifyIORef ptr (+ 1)
+    IInc -> inc tape ptr'
+    IDec -> dec tape ptr'
+    IOutput -> output tape ptr'
+    IInput -> undefined
+    IJumpRightIfZero -> undefined
     IJumpLeftIfNonZero -> undefined
 
 inc :: Tape -> Int -> IO ()
-inc t = modifyTape t (+1)
+inc t = modifyTape t (+ 1)
 
 dec :: Tape -> Int -> IO ()
 dec t = modifyTape t (subtract 1)
@@ -80,25 +88,24 @@ output :: Tape -> Int -> IO ()
 output tape i = do
   let (vecRef, i') = indexTape tape i
   vec <- readIORef vecRef
-  MutVec.read vec i' >>= print
+  print =<< MutVec.read vec i'
 
 data TapeIx = IxNeg Int | IxPos Int
-  deriving Show
+  deriving (Show)
 
 toTapeIx :: Int -> TapeIx
 toTapeIx i = case compare i 0 of
-  LT -> IxNeg (abs i - 1)
-  _  -> IxPos i
+  LT -> IxNeg (abs i - 1) -- -1 will be 0 in tapeNeg, -2 will be 1, etc.
+  _ -> IxPos i
 
 indexTape :: Tape -> Int -> (IORef (IOVector Word8), Int)
-indexTape Tape{..} i = case toTapeIx i of
-  IxNeg i' -> ( tapeNeg, i' )
-  IxPos i' -> ( tapePos, i' )
+indexTape Tape {..} i = case toTapeIx i of
+  IxNeg i' -> (tapeNeg, i')
+  IxPos i' -> (tapePos, i')
 
 modifyTape :: Tape -> (Word8 -> Word8) -> Int -> IO ()
 modifyTape tape f i = do
   let (vecRef, i') = indexTape tape i
-
       tooShort :: IO Bool
       tooShort = (i' >=) . MutVec.length <$> readIORef vecRef
 
@@ -108,24 +115,19 @@ modifyTape tape f i = do
         vec' <- readIORef vecRef >>= \v -> MutVec.grow v (MutVec.length v) :: IO (IOVector Word8)
         writeIORef vecRef vec'
 
-      ensureLargeEnough = whileM_ tooShort double
-
-  ensureLargeEnough
+  whileM_ tooShort double
   readIORef vecRef >>= \v -> MutVec.modify v f i'
 
-
 run :: ProgState -> [Instruction] -> IO ()
-run s prog = do
-  mapM_ (step s) prog
-  --showState s >>= putStrLn
+run s = mapM_ (step s)
 
 showState :: ProgState -> IO String
 showState ProgState {..} = do
   let Tape {..} = tape
   neg <- Vec.freeze =<< readIORef tapeNeg
   pos <- Vec.freeze =<< readIORef tapePos
-  p   <- readIORef ptr
-  pure $ unlines [ show neg, show pos, show p ]
+  p <- readIORef ptr
+  pure $ unlines [show neg, show pos, show p]
 
 main :: IO ()
 main = do
