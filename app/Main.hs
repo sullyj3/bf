@@ -74,9 +74,11 @@ step progstate@ProgState {..} instruction = do
     IInc -> inc tape ptr'
     IDec -> dec tape ptr'
     IOutput -> output tape ptr'
-    IInput -> undefined
-    IJumpRightIfZero -> undefined
-    IJumpLeftIfNonZero -> undefined
+    IInput -> toBeImplemented
+    IJumpRightIfZero -> toBeImplemented
+    IJumpLeftIfNonZero -> toBeImplemented
+  where
+    toBeImplemented = putStrLn "Not yet implemented"
 
 inc :: Tape -> Int -> IO ()
 inc t = modifyTape t (+ 1)
