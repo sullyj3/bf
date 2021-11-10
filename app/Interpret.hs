@@ -41,11 +41,10 @@ runStatement = \case
 
 repl :: Members [Tape, Embed IO] r => Sem r ()
 repl = forever do
-  prompt "BF> " >>= parseProgram .> \case
-    Right program -> do
-      runProgram program
-    Left err -> do
-      liftIO $ putStrLn (errorBundlePretty err)
+  prompt "BF> " >>= parseProgram
+    .> either
+      (liftIO . putStrLn . errorBundlePretty)
+      runProgram
 
 prompt :: MonadIO m => String -> m String
 prompt s = liftIO do
