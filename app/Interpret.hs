@@ -4,7 +4,7 @@ module Interpret where
 
 import Control.Monad (forever, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Loops (untilJust)
+import Control.Monad.Loops (untilJust, whileM_)
 import Data.Maybe (isNothing)
 import Flow
 import Polysemy
@@ -36,8 +36,8 @@ runStatement = \case
       pure mbyte
     Tape.writeTape byte
   SOutput -> liftIO . print =<< Tape.readTape
-  SLoop _statements -> do
-    error "loops not yet implemented"
+  SLoop statements -> do
+    whileM_ ((/= 0) <$> Tape.readTape) (mapM_ runStatement statements)
 
 repl :: Members [Tape, Embed IO] r => Sem r ()
 repl = forever do
