@@ -9,13 +9,13 @@ newtype Program = Program [ Statement ]
   deriving Show
 
 data Statement 
-  = SLeft
-  | SRight
-  | SInc
-  | SDec
-  | SInput
-  | SOutput
-  | SLoop [Statement]
+  = SLeft               -- <
+  | SRight              -- >
+  | SInc                -- +
+  | SDec                -- -
+  | SInput              -- ,
+  | SOutput             -- .
+  | SLoop [Statement]   -- [ ]
   deriving Show
 
 type Parser = Parsec Void String
@@ -25,8 +25,8 @@ type ErrBundle = ParseErrorBundle String Void
 -- Right (Program [SRight,SRight,SInc])
 -- >>> parseProgram "[+]->>"
 -- Right (Program [SLoop [SInc],SDec,SRight,SRight])
--- >>> parseProgram "[]"
--- Right (Program [SLoop []])
+-- >>> parseProgram "[[][+[]]]"
+-- Right (Program [SLoop [SLoop [],SLoop [SInc,SLoop []]]])
 parseProgram :: String -> Either ErrBundle Program
 parseProgram =
   parse program "interactive"
