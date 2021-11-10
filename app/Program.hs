@@ -1,24 +1,26 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
-module Program (parseProgram, Program(..), Statement(..)) where
+
+module Program (parseProgram, Program (..), Statement (..)) where
 
 import Data.Void
 import Text.Megaparsec
 
-newtype Program = Program [ Statement ]
-  deriving Show
+newtype Program = Program [Statement]
+  deriving (Show)
 
-data Statement 
-  = SLeft               -- <
-  | SRight              -- >
-  | SInc                -- +
-  | SDec                -- -
-  | SInput              -- ,
-  | SOutput             -- .
-  | SLoop [Statement]   -- [ ]
-  deriving Show
+data Statement
+  = SLeft -- <
+  | SRight -- >
+  | SInc -- +
+  | SDec -- -
+  | SInput -- ,
+  | SOutput -- .
+  | SLoop [Statement] -- [ ]
+  deriving (Show)
 
 type Parser = Parsec Void String
+
 type ErrBundle = ParseErrorBundle String Void
 
 -- >>> parseProgram ">>+"
@@ -38,16 +40,18 @@ program = do
   pure $ Program statements
 
 statement :: Parser Statement
-statement = SLeft  <$ single '<' <|>
-            SRight <$ single '>' <|>
-            SInc   <$ single '+' <|>
-            SDec   <$ single '-' <|>
-            SInput <$ single ',' <|>
-            SOutput <$ single '.' <|>
-            SLoop <$> loop
+statement =
+  SLeft <$ single '<'
+    <|> SRight <$ single '>'
+    <|> SInc <$ single '+'
+    <|> SDec <$ single '-'
+    <|> SInput <$ single ','
+    <|> SOutput <$ single '.'
+    <|> SLoop <$> loop
 
 loop :: Parser [Statement]
-loop = between
-  (single '[')
-  (single ']')
-  (many statement)
+loop =
+  between
+    (single '[')
+    (single ']')
+    (many statement)

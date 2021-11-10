@@ -4,20 +4,17 @@
 
 module Main where
 
+import Data.Function ((&))
 import Interpret (repl)
 import Polysemy
 import Polysemy.Reader (runReader)
 import Tape (tapeToIO)
 import qualified TapeIO
-import Data.Function ((&))
 
 main :: IO ()
 main = do
-  -- tape :: TapeIO
   tape <- TapeIO.initTape
-  -- repl :: Sem '[Tape, Embed IO] ()
-  repl 
-  -- tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
+  repl
     & tapeToIO
     & runReader tape
     & runM

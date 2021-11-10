@@ -5,10 +5,9 @@ module Tape where
 
 import Data.Word (Word8)
 import Polysemy
-
-import qualified TapeIO
-import           TapeIO (TapeIO)
 import Polysemy.Reader (Reader)
+import TapeIO (TapeIO)
+import qualified TapeIO
 
 data Tape m a where
   ReadTape :: Tape m Word8
@@ -20,10 +19,10 @@ makeSem ''Tape
 
 tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
 tapeToIO = interpret \case
-    ReadTape -> TapeIO.readTape
-    WriteTape byte -> TapeIO.writeTape byte
-    PointerPosition -> TapeIO.pointerPosition
-    SetPointerPosition pos -> TapeIO.setPointerPosition pos
+  ReadTape -> TapeIO.readTape
+  WriteTape byte -> TapeIO.writeTape byte
+  PointerPosition -> TapeIO.pointerPosition
+  SetPointerPosition pos -> TapeIO.setPointerPosition pos
 
 modifyCurrentCell :: Member Tape r => (Word8 -> Word8) -> Sem r ()
 modifyCurrentCell f = writeTape . f =<< readTape
