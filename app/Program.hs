@@ -4,13 +4,6 @@ module Program (parseProgram, Program(..), Statement(..)) where
 
 import Data.Void
 import Text.Megaparsec
-import Data.Maybe (fromJust)
-import Data.Function ((&))
-import Data.Bifunctor
-import Text.Megaparsec.Stream (VisualStream)
-import Data.Data (Proxy (Proxy))
-import Data.List.NonEmpty
-import Polysemy.Law (NonEmptyList(NonEmpty))
 
 newtype Program = Program [ Statement ]
   deriving Show

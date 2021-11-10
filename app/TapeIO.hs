@@ -5,13 +5,10 @@ import Control.Monad.Loops (whileM_)
 import Polysemy.Reader
 import Data.IORef
   ( IORef,
-    modifyIORef,
     newIORef,
     readIORef,
     writeIORef,
   )
-import Data.Vector (Vector, (!))
-import qualified Data.Vector as Vec
 import Data.Vector.Mutable (IOVector)
 import qualified Data.Vector.Mutable as MutVec
 import Data.Word (Word8)

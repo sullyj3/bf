@@ -3,8 +3,6 @@ module Interpret where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Polysemy
-import Polysemy.Input
-import Polysemy.Output
 import Program (Program (..), Statement (..), parseProgram)
 import System.IO (hFlush, stdout)
 import qualified Tape
@@ -37,7 +35,7 @@ runStatement = \case
               loop
      in loop
   SOutput -> liftIO . print =<< Tape.readTape
-  SLoop statements -> do
+  SLoop _statements -> do
     error "loops not yet implemented"
 
 repl :: Members [Tape, Embed IO] r => Sem r ()

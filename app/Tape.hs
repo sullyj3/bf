@@ -5,11 +5,7 @@ module Tape where
 
 import Data.Word (Word8)
 import Polysemy
-import Polysemy.Input
-import Polysemy.Output
-import Control.Monad.Reader (MonadReader)
 
-import Program (Program (..), Statement (..), parseProgram)
 import qualified TapeIO
 import           TapeIO (TapeIO)
 import Polysemy.Reader (Reader)

@@ -66,7 +66,7 @@ executable bf-exe
       NamedFieldPuns
       BlockArguments
       GeneralisedNewtypeDeriving
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -W
   build-depends:
       base >=4.7 && <5
     , bf

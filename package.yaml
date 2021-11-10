@@ -43,6 +43,7 @@ executables:
     - -O2 
     - -flate-specialise 
     - -fspecialise-aggressively
+    - -W
     dependencies:
     - bf
     default-extensions:
