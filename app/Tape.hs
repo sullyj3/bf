@@ -28,11 +28,5 @@ tapeToIO = interpret \case
 modifyCurrentCell :: Member Tape r => (Word8 -> Word8) -> Sem r ()
 modifyCurrentCell f = writeTape . f =<< readTape
 
-incCurrentCell :: Member Tape r => Sem r ()
-incCurrentCell = modifyCurrentCell (+1)
-
-decCurrentCell :: Member Tape r => Sem r ()
-decCurrentCell = modifyCurrentCell (subtract 1)
-
 modifyPointerPosition :: Member Tape r => (Int -> Int) -> Sem r ()
 modifyPointerPosition f = setPointerPosition . f =<< pointerPosition
