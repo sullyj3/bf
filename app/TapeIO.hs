@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -fplugin=Polysemy.Plugin #-}
+
 module TapeIO where
 
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Loops (whileM_)
-import Polysemy.Reader
 import Data.IORef
   ( IORef,
     newIORef,
@@ -13,7 +14,7 @@ import Data.Vector.Mutable (IOVector)
 import qualified Data.Vector.Mutable as MutVec
 import Data.Word (Word8)
 import Polysemy
-import Control.Monad.IO.Class (MonadIO(liftIO))
+import Polysemy.Reader
 
 -- an infinite tape that we can read and write bytes to
 data TapeIO = TapeIO
@@ -24,8 +25,8 @@ data TapeIO = TapeIO
 
 initTape :: IO TapeIO
 initTape = do
-  tapeNeg <- newIORef =<< MutVec.replicate 1024 0
-  tapePos <- newIORef =<< MutVec.replicate 1024 0
+  tapeNeg <- newIORef =<< MutVec.replicate 8 0
+  tapePos <- newIORef =<< MutVec.replicate 8 0
   tapePtr <- newIORef 0
   pure $ TapeIO {..}
 
@@ -55,12 +56,14 @@ ensureTapeLongEnough = do
       tooShort :: IO Bool
       tooShort = (i' >=) . MutVec.length <$> readIORef vecRef
 
-      -- TODO not sure how to set the values of the newly allocated area to 0
       double :: IO ()
-      double = error "infinite tape not yet implemented"
-  -- do
-  --     vec' <- readIORef vecRef >>= \v -> MutVec.grow v (MutVec.length v) :: IO (IOVector Word8)
-  --     writeIORef vecRef vec'
+      double = do
+        old <- readIORef vecRef
+        let len = MutVec.length old
+        new <- MutVec.grow old len
+        let newHalf = MutVec.drop len new
+        MutVec.set newHalf 0
+        writeIORef vecRef new
 
   liftIO $ whileM_ tooShort double
 
