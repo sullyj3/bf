@@ -23,6 +23,10 @@ dependencies:
 - base >= 4.7 && < 5
 - vector
 - monad-loops
+- megaparsec
+- polysemy
+- polysemy-plugin
+- mtl
 
 library:
   source-dirs: src
@@ -35,8 +39,27 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2 
+    - -flate-specialise 
+    - -fspecialise-aggressively
     dependencies:
     - bf
+    default-extensions:
+      - DataKinds
+      - FlexibleContexts
+      - GADTs
+      - LambdaCase
+      - PolyKinds
+      - RankNTypes
+      - ScopedTypeVariables
+      - TypeApplications
+      - TypeOperators
+      - TypeFamilies
+      - RecordWildCards
+      - NamedFieldPuns
+      - BlockArguments
+      - GeneralisedNewtypeDeriving
+
 
 tests:
   bf-test:
