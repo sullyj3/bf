@@ -27,6 +27,7 @@ dependencies:
 - polysemy
 - polysemy-plugin
 - mtl
+- flow
 
 library:
   source-dirs: src

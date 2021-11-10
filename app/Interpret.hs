@@ -7,19 +7,22 @@ import Polysemy.Input
 import Polysemy.Output
 import Program (Program (..), Statement (..), parseProgram)
 import System.IO (hFlush, stdout)
-import Tape
+import qualified Tape
+import           Tape (Tape)
 import Text.Read (readMaybe)
 import Control.Monad (forever)
+import Flow
+import Text.Megaparsec (errorBundlePretty)
 
 runProgram :: Members [Tape, Embed IO] r => Program -> Sem r ()
 runProgram (Program statements) = mapM_ runStatement statements
 
 runStatement :: Members [Tape, Embed IO] r => Statement -> Sem r ()
 runStatement = \case
-  SLeft -> modifyPointerPosition (+ 1)
-  SRight -> modifyPointerPosition (subtract 1)
-  SInc -> modifyCurrentCell (+ 1)
-  SDec -> modifyCurrentCell (subtract 1)
+  SLeft -> Tape.modifyPointerPosition (+ 1)
+  SRight -> Tape.modifyPointerPosition (subtract 1)
+  SInc -> Tape.modifyCurrentCell (+ 1)
+  SDec -> Tape.modifyCurrentCell (subtract 1)
   SInput ->
     let loop = do
           l <- liftIO
@@ -28,12 +31,12 @@ runStatement = \case
               hFlush stdout
               getLine
           case readMaybe l of
-            Just b -> writeTape b
+            Just b -> Tape.writeTape b
             Nothing -> do
               liftIO $ putStrLn $ "couldn't read " ++ l ++ " as a byte, try again."
               loop
      in loop
-  SOutput -> liftIO . print =<< readTape
+  SOutput -> liftIO . print =<< Tape.readTape
   SLoop statements -> do
     error "loops not yet implemented"
 
@@ -41,9 +44,8 @@ repl :: Members [Tape, Embed IO] r => Sem r ()
 repl = forever do
   liftIO do putStr "BF> "
             hFlush stdout
-  l <- liftIO getLine
-  case parseProgram l of
+  liftIO getLine >>= parseProgram .> \case
     Right program -> do
       runProgram program
-    Left _ -> do
-      liftIO $ putStrLn "invalid program"
+    Left err -> do
+      liftIO $ putStrLn "invalid program:" >> putStrLn (either show show err)

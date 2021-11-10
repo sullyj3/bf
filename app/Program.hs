@@ -1,9 +1,15 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 module Program (parseProgram, Program(..), Statement(..)) where
 
 import Text.Megaparsec
 import Data.Maybe (fromJust)
 import Data.Function ((&))
 import Data.Bifunctor
+import Text.Megaparsec.Stream (VisualStream)
+import Data.Data (Proxy (Proxy))
+import Data.List.NonEmpty
+import Polysemy.Law (NonEmptyList(NonEmpty))
 
 data Lexeme
   = LLeft
@@ -15,6 +21,7 @@ data Lexeme
   | LJumpRightIfZero
   | LJumpLeftIfNonZero
   deriving (Show, Eq, Ord)
+
 
 -- >>> let input = "[]"
 -- >>> lexProgram input

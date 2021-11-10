@@ -32,6 +32,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , flow
     , megaparsec
     , monad-loops
     , mtl
@@ -69,6 +70,7 @@ executable bf-exe
   build-depends:
       base >=4.7 && <5
     , bf
+    , flow
     , megaparsec
     , monad-loops
     , mtl
@@ -88,6 +90,7 @@ test-suite bf-test
   build-depends:
       base >=4.7 && <5
     , bf
+    , flow
     , megaparsec
     , monad-loops
     , mtl
