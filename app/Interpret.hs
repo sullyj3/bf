@@ -1,16 +1,19 @@
 {-# OPTIONS_GHC -fplugin=Polysemy.Plugin #-}
+
 module Interpret where
 
+import Control.Monad (forever, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Loops (untilJust)
+import Data.Maybe (isNothing)
+import Flow
 import Polysemy
 import Program (Program (..), Statement (..), parseProgram)
 import System.IO (hFlush, stdout)
+import Tape (Tape)
 import qualified Tape
-import           Tape (Tape)
-import Text.Read (readMaybe)
-import Control.Monad (forever)
-import Flow
 import Text.Megaparsec (errorBundlePretty)
+import Text.Read (readMaybe)
 
 runProgram :: Members [Tape, Embed IO] r => Program -> Sem r ()
 runProgram (Program statements) = mapM_ runStatement statements
@@ -21,29 +24,31 @@ runStatement = \case
   SRight -> Tape.modifyPointerPosition (subtract 1)
   SInc -> Tape.modifyCurrentCell (+ 1)
   SDec -> Tape.modifyCurrentCell (subtract 1)
-  SInput ->
-    let loop = do
-          l <- liftIO
-            do
-              putStr "byte> "
-              hFlush stdout
-              getLine
-          case readMaybe l of
-            Just b -> Tape.writeTape b
-            Nothing -> do
-              liftIO $ putStrLn $ "couldn't read " ++ l ++ " as a byte, try again."
-              loop
-     in loop
+  SInput -> do
+    byte <- untilJust do
+      line <- prompt "byte> "
+      let mbyte = readMaybe line
+      when
+        (isNothing mbyte)
+        ( liftIO . putStrLn $
+            "couldn't read \"" ++ line ++ "\" as a byte, try again."
+        )
+      pure mbyte
+    Tape.writeTape byte
   SOutput -> liftIO . print =<< Tape.readTape
   SLoop _statements -> do
     error "loops not yet implemented"
 
 repl :: Members [Tape, Embed IO] r => Sem r ()
 repl = forever do
-  liftIO do putStr "BF> "
-            hFlush stdout
-  liftIO getLine >>= parseProgram .> \case
+  prompt "BF> " >>= parseProgram .> \case
     Right program -> do
       runProgram program
     Left err -> do
       liftIO $ putStrLn (errorBundlePretty err)
+
+prompt :: MonadIO m => String -> m String
+prompt s = liftIO do
+  putStr s
+  hFlush stdout
+  getLine
