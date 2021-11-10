@@ -2,6 +2,7 @@
 {-# LANGUAGE InstanceSigs #-}
 module Program (parseProgram, Program(..), Statement(..)) where
 
+import Data.Void
 import Text.Megaparsec
 import Data.Maybe (fromJust)
 import Data.Function ((&))
@@ -10,39 +11,6 @@ import Text.Megaparsec.Stream (VisualStream)
 import Data.Data (Proxy (Proxy))
 import Data.List.NonEmpty
 import Polysemy.Law (NonEmptyList(NonEmpty))
-
-data Lexeme
-  = LLeft
-  | LRight
-  | LInc
-  | LDec
-  | LOutput
-  | LInput
-  | LJumpRightIfZero
-  | LJumpLeftIfNonZero
-  deriving (Show, Eq, Ord)
-
-
--- >>> let input = "[]"
--- >>> lexProgram input
--- Right [LJumpRightIfZero,LJumpLeftIfNonZero]
-lexProgram :: String -> Either LexError [Lexeme]
-lexProgram = traverse lexInstruction
-
-newtype LexError = UnexpectedChar Char
-  deriving (Show, Eq, Ord)
-
-lexInstruction :: Char -> Either LexError Lexeme
-lexInstruction = \case
-  '<' -> Right LLeft
-  '>' -> Right LRight
-  '+' -> Right LInc
-  '-' -> Right LDec
-  '.' -> Right LOutput
-  ',' -> Right LInput
-  '[' -> Right LJumpRightIfZero
-  ']' -> Right LJumpLeftIfNonZero
-  c -> Left $ UnexpectedChar c
 
 newtype Program = Program [ Statement ]
   deriving Show
@@ -57,10 +25,8 @@ data Statement
   | SLoop [Statement]
   deriving Show
 
-type Parser = Parsec () [Lexeme]
-type ErrBundle = ParseErrorBundle [Lexeme] ()
-
-type ProgParseError = Either LexError ErrBundle
+type Parser = Parsec Void String
+type ErrBundle = ParseErrorBundle String Void
 
 -- >>> parseProgram ">>+"
 -- Right (Program [SRight,SRight,SInc])
@@ -68,27 +34,27 @@ type ProgParseError = Either LexError ErrBundle
 -- Right (Program [SLoop [SInc],SDec,SRight,SRight])
 -- >>> parseProgram "[]"
 -- Right (Program [SLoop []])
-parseProgram :: String -> Either ProgParseError Program
-parseProgram s = do
-  lexemes <- lexProgram s             & first Left
-  parse program "interactive" lexemes & first Right
+parseProgram :: String -> Either ErrBundle Program
+parseProgram =
+  parse program "interactive"
 
 program :: Parser Program
 program = do
   statements <- many statement
+  eof
   pure $ Program statements
 
 statement :: Parser Statement
-statement = SLeft  <$ single LLeft <|>
-            SRight <$ single LRight <|>
-            SInc   <$ single LInc <|>
-            SDec   <$ single LDec <|>
-            SInput <$ single LInput <|>
-            SOutput <$ single LOutput <|>
+statement = SLeft  <$ single '<' <|>
+            SRight <$ single '>' <|>
+            SInc   <$ single '+' <|>
+            SDec   <$ single '-' <|>
+            SInput <$ single ',' <|>
+            SOutput <$ single '.' <|>
             SLoop <$> loop
 
 loop :: Parser [Statement]
 loop = between
-  (single LJumpRightIfZero)
-  (single LJumpLeftIfNonZero)
+  (single '[')
+  (single ']')
   (many statement)

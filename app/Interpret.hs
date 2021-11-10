@@ -48,4 +48,4 @@ repl = forever do
     Right program -> do
       runProgram program
     Left err -> do
-      liftIO $ putStrLn "invalid program:" >> putStrLn (either show show err)
+      liftIO $ putStrLn (errorBundlePretty err)
