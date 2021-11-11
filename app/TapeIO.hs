@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fplugin=Polysemy.Plugin #-}
 
--- An implementation of the `Tape` effect from Tape.hs in terms of IORefs and 
+-- An implementation of the `Tape` effect from Tape.hs in terms of IORefs and
 -- IOVectors
 
 module TapeIO where
@@ -18,7 +18,7 @@ import qualified Data.Vector.Mutable as MutVec
 import Data.Word (Word8)
 import Polysemy
 import Polysemy.Reader (Reader, ask)
-import Tape (Tape(..))
+import Tape (Tape (..))
 
 tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
 tapeToIO = interpret \case
@@ -26,7 +26,6 @@ tapeToIO = interpret \case
   WriteTape byte -> writeTape byte
   PointerPosition -> pointerPosition
   SetPointerPosition pos -> setPointerPosition pos
-
 
 -- an infinite tape that we can read and write bytes to
 data TapeIO = TapeIO
@@ -62,11 +61,9 @@ currTrueIndex = do
 -- more tape in order to be able to read from and write to the current position
 ensureTapeLongEnough :: Members [Reader TapeIO, Embed IO] r => Sem r ()
 ensureTapeLongEnough = do
-  tape <- ask
-  i <- pointerPosition
-  let (i', vecRef) = trueIndex i tape
-      tooShort :: IO Bool
-      tooShort = (i' >=) . MutVec.length <$> readIORef vecRef
+  (i, vecRef) <- currTrueIndex
+  let tooShort :: IO Bool
+      tooShort = (i >=) . MutVec.length <$> readIORef vecRef
 
       double :: IO ()
       double = do

@@ -29,16 +29,17 @@ type ErrBundle = ParseErrorBundle String Void
 -- Right (Program [SLoop [SInc],SDec,SRight,SRight])
 -- >>> parseProgram "[[][+[]]]"
 -- Right (Program [SLoop [SLoop [],SLoop [SInc,SLoop []]]])
+-- $setup
+-- >>> import Data.Either (isLeft)
+-- >>> isLeft $ parseProgram "["
+-- True
 parseProgram :: String -> Either ErrBundle Program
 parseProgram =
   parse program "interactive"
 
 -- Todo: allow comments and whitespace
 program :: Parser Program
-program = do
-  statements <- many statement
-  eof
-  pure $ Program statements
+program = Program <$> many statement <* eof
 
 statement :: Parser Statement
 statement =
