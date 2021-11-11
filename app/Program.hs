@@ -33,6 +33,7 @@ parseProgram :: String -> Either ErrBundle Program
 parseProgram =
   parse program "interactive"
 
+-- Todo: allow comments and whitespace
 program :: Parser Program
 program = do
   statements <- many statement
