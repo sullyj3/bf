@@ -8,13 +8,12 @@ import Data.Function ((&))
 import Interpret (repl)
 import Polysemy
 import Polysemy.Reader (runReader)
-import Tape (tapeToIO)
 import qualified TapeIO
 
 main :: IO ()
 main = do
   tape <- TapeIO.initTape
   repl
-    & tapeToIO
+    & TapeIO.tapeToIO
     & runReader tape
     & runM

@@ -1,13 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fplugin=Polysemy.Plugin #-}
 
+-- An effect representing access to an infinite tape of cells, each cell 
+-- containing a byte which can be read from or written to.
+
 module Tape where
 
 import Data.Word (Word8)
 import Polysemy
-import Polysemy.Reader (Reader)
-import TapeIO (TapeIO)
-import qualified TapeIO
 
 data Tape m a where
   ReadTape :: Tape m Word8
@@ -16,13 +16,6 @@ data Tape m a where
   SetPointerPosition :: Int -> Tape m ()
 
 makeSem ''Tape
-
-tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
-tapeToIO = interpret \case
-  ReadTape -> TapeIO.readTape
-  WriteTape byte -> TapeIO.writeTape byte
-  PointerPosition -> TapeIO.pointerPosition
-  SetPointerPosition pos -> TapeIO.setPointerPosition pos
 
 modifyCurrentCell :: Member Tape r => (Word8 -> Word8) -> Sem r ()
 modifyCurrentCell f = writeTape . f =<< readTape

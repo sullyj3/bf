@@ -1,5 +1,8 @@
 {-# OPTIONS_GHC -fplugin=Polysemy.Plugin #-}
 
+-- An implementation of the `Tape` effect from Tape.hs in terms of IORefs and 
+-- IOVectors
+
 module TapeIO where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -14,7 +17,16 @@ import Data.Vector.Mutable (IOVector)
 import qualified Data.Vector.Mutable as MutVec
 import Data.Word (Word8)
 import Polysemy
-import Polysemy.Reader
+import Polysemy.Reader (Reader, ask)
+import Tape (Tape(..))
+
+tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
+tapeToIO = interpret \case
+  ReadTape -> readTape
+  WriteTape byte -> writeTape byte
+  PointerPosition -> pointerPosition
+  SetPointerPosition pos -> setPointerPosition pos
+
 
 -- an infinite tape that we can read and write bytes to
 data TapeIO = TapeIO
