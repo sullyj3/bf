@@ -41,9 +41,6 @@ initTape = do
   tapePtr <- newIORef 0
   pure $ TapeIO {..}
 
--- newtype TapeIOM a = TapeIOM {runTapeIOM :: ReaderT TapeIO IO a}
---   deriving (Functor, Applicative, Monad, MonadReader TapeIO, MonadIO)
-
 -- since we use two vectors, one for positive indices and one for negative indices,
 -- this allows us to view the appropriate vector at the index we want to access
 trueIndex :: Int -> TapeIO -> (Int, IORef (IOVector Word8))
