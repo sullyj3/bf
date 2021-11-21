@@ -2,27 +2,17 @@
 
 module Interpret where
 
-import Control.Monad (forever)
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Loops (whileM_)
 import Flow
 import Polysemy
 import Program (Program (..), Statement (..), parseProgram)
-import System.IO (hFlush, stdout)
 import Tape (Tape)
 import qualified Tape
 import Text.Megaparsec (errorBundlePretty)
-import Text.Read (readMaybe)
-import Data.Function (fix)
+import qualified Data.Text as Text
 
 runProgram :: Members [Tape, Embed IO] r => Program -> Sem r ()
 runProgram (Program statements) = mapM_ runStatement statements
-
--- from Relude
-whenNothing :: Applicative f => Maybe a -> f a -> f a
-whenNothing (Just x) _ = pure x
-whenNothing Nothing  m = m
-
 
 runStatement :: Members [Tape, Embed IO] r => Statement -> Sem r ()
 runStatement = \case
@@ -33,8 +23,8 @@ runStatement = \case
   SInput -> do
     byte <- fix \retry -> do
       line <- prompt "byte> "
-      whenNothing (readMaybe line) do
-        liftIO . putStrLn $ "couldn't read \"" ++ line ++ "\" as a byte, try again."
+      whenNothing (readMaybe $ Text.unpack line) do
+        putTextLn $ "couldn't read \"" <> line <> "\" as a byte, try again."
         retry
 
     Tape.writeTape byte
@@ -49,8 +39,8 @@ repl = forever do
       (liftIO . putStrLn . errorBundlePretty)
       runProgram
 
-prompt :: MonadIO m => String -> m String
-prompt s = liftIO do
-  putStr s
+prompt :: MonadIO m => Text -> m Text
+prompt s = do
+  putText s
   hFlush stdout
   getLine

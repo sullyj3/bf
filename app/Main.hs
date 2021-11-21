@@ -4,11 +4,12 @@
 
 module Main where
 
-import Data.Function ((&))
 import Interpret (repl)
 import Polysemy
 import Polysemy.Reader (runReader)
 import qualified TapeIO
+
+import Prelude hiding (runReader)
 
 main :: IO ()
 main = do

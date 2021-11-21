@@ -20,7 +20,13 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/githubuser/bf#readme>
 
 dependencies:
-- base >= 4.7 && < 5
+- name: base
+  mixin:
+    - hiding (Prelude)
+- name: relude
+  mixin:
+    - (Relude as Prelude)
+    - (Relude.Lifted.Handle)
 - vector
 - monad-loops
 - megaparsec
@@ -28,6 +34,7 @@ dependencies:
 - polysemy-plugin
 - mtl
 - flow
+- text
 
 library:
   source-dirs: src
@@ -61,6 +68,7 @@ executables:
       - NamedFieldPuns
       - BlockArguments
       - GeneralisedNewtypeDeriving
+      - OverloadedStrings
 
 
 tests:

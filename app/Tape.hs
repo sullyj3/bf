@@ -6,7 +6,6 @@
 
 module Tape where
 
-import Data.Word (Word8)
 import Polysemy
 
 data Tape m a where

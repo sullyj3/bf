@@ -5,20 +5,14 @@
 
 module TapeIO where
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Loops (whileM_)
-import Data.IORef
-  ( IORef,
-    newIORef,
-    readIORef,
-    writeIORef,
-  )
 import Data.Vector.Mutable (IOVector)
 import qualified Data.Vector.Mutable as MutVec
-import Data.Word (Word8)
 import Polysemy
 import Polysemy.Reader (Reader, ask)
 import Tape (Tape (..))
+
+import Prelude hiding (Reader, ask, runReader)
 
 tapeToIO :: Members [Reader TapeIO, Embed IO] r => InterpreterFor Tape r
 tapeToIO = interpret \case

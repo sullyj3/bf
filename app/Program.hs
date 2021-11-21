@@ -3,7 +3,7 @@
 
 module Program (parseProgram, Program (..), Statement (..)) where
 
-import Data.Void
+import Prelude hiding (many)
 import Text.Megaparsec
 
 newtype Program = Program [Statement]
@@ -19,9 +19,9 @@ data Statement
   | SLoop [Statement] -- [ ]
   deriving (Show)
 
-type Parser = Parsec Void String
+type Parser = Parsec Void Text
 
-type ErrBundle = ParseErrorBundle String Void
+type ErrBundle = ParseErrorBundle Text Void
 
 -- >>> parseProgram ">>+"
 -- Right (Program [SRight,SRight,SInc])
@@ -33,7 +33,7 @@ type ErrBundle = ParseErrorBundle String Void
 -- >>> import Data.Either (isLeft)
 -- >>> isLeft $ parseProgram "["
 -- True
-parseProgram :: String -> Either ErrBundle Program
+parseProgram :: Text -> Either ErrBundle Program
 parseProgram =
   parse program "interactive"
 
