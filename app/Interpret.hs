@@ -2,10 +2,9 @@
 
 module Interpret where
 
-import Control.Monad (forever, when)
+import Control.Monad (forever)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Loops (untilJust, whileM_)
-import Data.Maybe (isNothing)
+import Control.Monad.Loops (whileM_)
 import Flow
 import Polysemy
 import Program (Program (..), Statement (..), parseProgram)
@@ -14,9 +13,16 @@ import Tape (Tape)
 import qualified Tape
 import Text.Megaparsec (errorBundlePretty)
 import Text.Read (readMaybe)
+import Data.Function (fix)
 
 runProgram :: Members [Tape, Embed IO] r => Program -> Sem r ()
 runProgram (Program statements) = mapM_ runStatement statements
+
+-- from Relude
+whenNothing :: Applicative f => Maybe a -> f a -> f a
+whenNothing (Just x) _ = pure x
+whenNothing Nothing  m = m
+
 
 runStatement :: Members [Tape, Embed IO] r => Statement -> Sem r ()
 runStatement = \case
@@ -25,15 +31,12 @@ runStatement = \case
   SInc -> Tape.modifyCurrentCell (+ 1)
   SDec -> Tape.modifyCurrentCell (subtract 1)
   SInput -> do
-    byte <- untilJust do
+    byte <- fix \retry -> do
       line <- prompt "byte> "
-      let mbyte = readMaybe line
-      when
-        (isNothing mbyte)
-        ( liftIO . putStrLn $
-            "couldn't read \"" ++ line ++ "\" as a byte, try again."
-        )
-      pure mbyte
+      whenNothing (readMaybe line) do
+        liftIO . putStrLn $ "couldn't read \"" ++ line ++ "\" as a byte, try again."
+        retry
+
     Tape.writeTape byte
   SOutput -> liftIO . print =<< Tape.readTape
   SLoop statements -> do
